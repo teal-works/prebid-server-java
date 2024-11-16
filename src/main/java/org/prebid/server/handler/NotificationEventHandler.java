@@ -160,6 +160,7 @@ public class NotificationEventHandler implements ApplicationResource {
                     .timestamp(eventRequest.getTimestamp())
                     .integration(eventRequest.getIntegration())
                     .httpContext(HttpRequestContext.from(routingContext))
+                    .eventRequest(EventUtil.from(routingContext))
                     .activityInfrastructure(activityInfrastructure(account))
                     .build();
 

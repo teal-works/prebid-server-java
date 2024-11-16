@@ -3,6 +3,8 @@ package org.prebid.server.events;
 import lombok.Builder;
 import lombok.Value;
 
+import java.math.BigDecimal;
+
 /**
  * Represents event request.
  */
@@ -27,6 +29,12 @@ public class EventRequest {
     String integration;
 
     Analytics analytics;
+
+    BigDecimal price;
+
+    String url;
+
+    String impId;
 
     public enum Type {
 

@@ -4,7 +4,9 @@ import io.vertx.core.MultiMap;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.prebid.server.util.HttpUtil;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 public class EventUtil {
@@ -114,7 +116,6 @@ public class EventUtil {
 
     public static EventRequest from(RoutingContext routingContext) {
         final MultiMap queryParams = routingContext.request().params();
-
         final String typeAsString = queryParams.get(TYPE_PARAMETER);
         final EventRequest.Type type = typeAsString.equals(WIN_TYPE) ? EventRequest.Type.win : EventRequest.Type.imp;
 
@@ -128,6 +129,14 @@ public class EventUtil {
         final String timestampAsString = StringUtils.stripToNull(queryParams.get(TIMESTAMP_PARAMETER));
         final Long timestamp = timestampAsString != null ? Long.valueOf(timestampAsString) : null;
 
+        final String priceAsString = StringUtils.stripToNull(queryParams.get("p"));
+        BigDecimal price = null;
+        try {
+            price = priceAsString != null ? BigDecimal.valueOf(Double.parseDouble(priceAsString)) : null;
+        } catch (NumberFormatException e) {
+            //fail silently
+        }
+
         final String auctionId = StringUtils.stripToNull(queryParams.get(AUCTION_ID));
 
         return EventRequest.builder()
@@ -136,6 +145,9 @@ public class EventUtil {
                 .auctionId(auctionId)
                 .accountId(queryParams.get(ACCOUNT_ID_PARAMETER))
                 .bidder(queryParams.get(BIDDER_PARAMETER))
+                .price(price)
+                .url(queryParams.get("u"))
+                .impId(queryParams.get("c"))
                 .timestamp(timestamp)
                 .format(format)
                 .analytics(analytics)
@@ -169,6 +181,21 @@ public class EventUtil {
         // bidder
         if (StringUtils.isNotEmpty(eventRequest.getBidder())) {
             result.append(nameValueAsQueryString(BIDDER_PARAMETER, eventRequest.getBidder()));
+        }
+
+        // price
+        if (eventRequest.getPrice() != null) {
+            result.append(nameValueAsQueryString("p", eventRequest.getPrice().toString()));
+        }
+
+        // url
+        if (StringUtils.isNotEmpty(eventRequest.getUrl())) {
+            result.append(nameValueAsQueryString("u", HttpUtil.encodeUrl(eventRequest.getUrl())));
+        }
+
+        // tag ID
+        if (StringUtils.isNotEmpty(eventRequest.getImpId())) {
+            result.append(nameValueAsQueryString("c", HttpUtil.encodeUrl(eventRequest.getImpId())));
         }
 
         // format

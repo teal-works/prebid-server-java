@@ -10,6 +10,7 @@ import org.prebid.server.analytics.AnalyticsReporter;
 import org.prebid.server.analytics.reporter.AnalyticsReporterDelegator;
 import org.prebid.server.analytics.reporter.agma.AgmaAnalyticsReporter;
 import org.prebid.server.analytics.reporter.agma.model.AgmaAnalyticsProperties;
+import org.prebid.server.analytics.reporter.bids.BidsAnalyticsReporter;
 import org.prebid.server.analytics.reporter.greenbids.GreenbidsAnalyticsReporter;
 import org.prebid.server.analytics.reporter.greenbids.model.GreenbidsAnalyticsProperties;
 import org.prebid.server.analytics.reporter.log.LogAnalyticsReporter;
@@ -66,6 +67,12 @@ public class AnalyticsConfiguration {
     @ConditionalOnProperty(prefix = "analytics.log", name = "enabled", havingValue = "true")
     LogAnalyticsReporter logAnalyticsReporter(JacksonMapper mapper) {
         return new LogAnalyticsReporter(mapper);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "analytics.bids", name = "enabled", havingValue = "true")
+    BidsAnalyticsReporter bidsAnalyticsReporter(JacksonMapper mapper) {
+        return new BidsAnalyticsReporter(mapper);
     }
 
     @Configuration

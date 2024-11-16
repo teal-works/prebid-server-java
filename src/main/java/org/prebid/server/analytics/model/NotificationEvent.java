@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Value;
 import org.prebid.server.activity.infrastructure.ActivityInfrastructure;
+import org.prebid.server.events.EventRequest;
 import org.prebid.server.model.HttpRequestContext;
 import org.prebid.server.settings.model.Account;
 
@@ -27,6 +28,8 @@ public class NotificationEvent {
     String integration;
 
     HttpRequestContext httpContext;
+
+    EventRequest eventRequest;
 
     @JsonIgnore
     ActivityInfrastructure activityInfrastructure;

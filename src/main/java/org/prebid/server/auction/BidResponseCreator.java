@@ -292,6 +292,9 @@ public class BidResponseCreator {
                         bid,
                         bidType,
                         bidder,
+                        bid.getPrice(),
+                        auctionContext.getBidRequest().getSite().getPage(),
+                        bid.getImpid(),
                         account,
                         videoStoredDataResult,
                         eventsContext,
@@ -324,6 +327,9 @@ public class BidResponseCreator {
     private ObjectNode updateBidExt(Bid bid,
                                     BidType bidType,
                                     String bidder,
+                                    BigDecimal price,
+                                    String url,
+                                    String impId,
                                     Account account,
                                     VideoStoredDataResult videoStoredDataResult,
                                     EventsContext eventsContext,
@@ -334,6 +340,9 @@ public class BidResponseCreator {
                 bid,
                 bidType,
                 bidder,
+                price,
+                url,
+                impId,
                 account,
                 videoStoredDataResult,
                 eventsContext,
@@ -355,6 +364,9 @@ public class BidResponseCreator {
     private ExtBidPrebid updateBidExtPrebid(Bid bid,
                                             BidType bidType,
                                             String bidder,
+                                            BigDecimal price,
+                                            String url,
+                                            String impId,
                                             Account account,
                                             VideoStoredDataResult videoStoredDataResult,
                                             EventsContext eventsContext,
@@ -362,7 +374,7 @@ public class BidResponseCreator {
                                             String effectiveBidId) {
 
         final Video storedVideo = videoStoredDataResult.getImpIdToStoredVideo().get(bid.getImpid());
-        final Events events = createEvents(bidder, account, effectiveBidId, eventsContext);
+        final Events events = createEvents(bidder, price, url, impId, account, effectiveBidId, eventsContext);
         final ExtBidPrebidVideo extBidPrebidVideo = getExtBidPrebidVideo(bid.getExt()).orElse(null);
 
         final ExtBidPrebid.ExtBidPrebidBuilder extBidPrebidBuilder = getExtPrebid(bid.getExt(), ExtBidPrebid.class)
@@ -1538,6 +1550,9 @@ public class BidResponseCreator {
     }
 
     private Events createEvents(String bidder,
+                                BigDecimal price,
+                                String url,
+                                String impId,
                                 Account account,
                                 String bidId,
                                 EventsContext eventsContext) {
@@ -1546,6 +1561,9 @@ public class BidResponseCreator {
                 ? eventsService.createEvent(
                 bidId,
                 bidder,
+                price,
+                url,
+                impId,
                 account.getId(),
                 true,
                 eventsContext)
