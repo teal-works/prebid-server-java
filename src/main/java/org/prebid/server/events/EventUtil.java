@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.prebid.server.util.HttpUtil;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Objects;
 
 public class EventUtil {
@@ -185,7 +186,8 @@ public class EventUtil {
 
         // price
         if (eventRequest.getPrice() != null) {
-            result.append(nameValueAsQueryString("p", eventRequest.getPrice().toString()));
+            result.append(nameValueAsQueryString("p", eventRequest.getPrice()
+                    .setScale(5, RoundingMode.HALF_DOWN).stripTrailingZeros().toPlainString()));
         }
 
         // url

@@ -16,6 +16,7 @@ import org.prebid.server.json.JacksonMapper;
 import org.prebid.server.log.Logger;
 import org.prebid.server.log.LoggerFactory;
 
+import java.math.RoundingMode;
 import java.util.Objects;
 
 /**
@@ -23,7 +24,7 @@ import java.util.Objects;
  */
 public class BidsAnalyticsReporter implements AnalyticsReporter {
 
-    public static final Logger logger = LoggerFactory.getLogger(BidsAnalyticsReporter.class);
+    public static final Logger logger = LoggerFactory.getLogger("ANALYTICS");
 
     private final JacksonMapper mapper;
 
@@ -47,7 +48,7 @@ public class BidsAnalyticsReporter implements AnalyticsReporter {
             case null, default -> LogEvent.of("unknown", null);
         };
 
-        if (logEvent.getType().equals("win")) {
+        if (logEvent.getType().equals("win") || logEvent.getType().equals("imp")) {
             logger.info(mapper.encodeToString(logEvent));
         }
 
@@ -58,7 +59,8 @@ public class BidsAnalyticsReporter implements AnalyticsReporter {
         final EventRequest eventReq = notificationEvent.getEventRequest();
         try {
             return mapper.mapper().readTree("{\"account\":\"" + eventReq.getAccountId()
-                    + "\",\"price\":\"" + eventReq.getPrice()
+                    + "\",\"price\":\"" + eventReq.getPrice().setScale(5, RoundingMode.HALF_DOWN)
+                    .stripTrailingZeros().toPlainString()
                     + "\",\"url\":\"" + eventReq.getUrl().replace("\"", "\\\"")
                     + "\",\"impId\":\"" + eventReq.getImpId().replace("\"", "\\\"")
                     + "\",\"auctionId\":\"" + eventReq.getAuctionId().replace("\"", "\\\"") + "\"}");
