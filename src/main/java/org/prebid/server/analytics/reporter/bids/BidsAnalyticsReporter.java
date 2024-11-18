@@ -1,6 +1,7 @@
 package org.prebid.server.analytics.reporter.bids;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.vertx.core.Future;
 import org.prebid.server.analytics.AnalyticsReporter;
@@ -27,9 +28,11 @@ public class BidsAnalyticsReporter implements AnalyticsReporter {
     public static final Logger logger = LoggerFactory.getLogger("ANALYTICS");
 
     private final JacksonMapper mapper;
+    private final JsonStringEncoder encoder;
 
     public BidsAnalyticsReporter(JacksonMapper mapper) {
         this.mapper = Objects.requireNonNull(mapper);
+        this.encoder = JsonStringEncoder.getInstance();
     }
 
     @Override
@@ -49,7 +52,7 @@ public class BidsAnalyticsReporter implements AnalyticsReporter {
         };
 
         if (logEvent.getType().equals("win") || logEvent.getType().equals("imp")) {
-            logger.info(mapper.encodeToString(logEvent));
+            logger.info(new String(encoder.quoteAsString(mapper.encodeToString(logEvent))));
         }
 
         return Future.succeededFuture();
@@ -61,9 +64,9 @@ public class BidsAnalyticsReporter implements AnalyticsReporter {
             return mapper.mapper().readTree("{\"account\":\"" + eventReq.getAccountId()
                     + "\",\"price\":\"" + eventReq.getPrice().setScale(5, RoundingMode.HALF_DOWN)
                     .stripTrailingZeros().toPlainString()
-                    + "\",\"url\":\"" + eventReq.getUrl().replace("\"", "\\\"")
-                    + "\",\"impId\":\"" + eventReq.getImpId().replace("\"", "\\\"")
-                    + "\",\"auctionId\":\"" + eventReq.getAuctionId().replace("\"", "\\\"") + "\"}");
+                    + "\",\"url\":\"" + new String(encoder.quoteAsString(eventReq.getUrl()))
+                    + "\",\"impId\":\"" + new String(encoder.quoteAsString(eventReq.getImpId()))
+                    + "\",\"auctionId\":\"" + new String(encoder.quoteAsString(eventReq.getAuctionId())) + "\"}");
         } catch (JsonProcessingException e) {
             logger.error("Bids log adapter failed to parse JSON.");
         }
