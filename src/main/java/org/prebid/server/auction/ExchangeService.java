@@ -54,6 +54,7 @@ import org.prebid.server.bidder.model.BidderBid;
 import org.prebid.server.bidder.model.BidderError;
 import org.prebid.server.bidder.model.BidderSeatBid;
 import org.prebid.server.bidder.model.Price;
+import org.prebid.server.bids.IIQ;
 import org.prebid.server.cookie.UidsCookie;
 import org.prebid.server.exception.InvalidRequestException;
 import org.prebid.server.exception.PreBidException;
@@ -155,6 +156,7 @@ public class ExchangeService {
     private final HttpInteractionLogger httpInteractionLogger;
     private final PriceFloorAdjuster priceFloorAdjuster;
     private final PriceFloorProcessor priceFloorProcessor;
+    private final IIQ iiq;
     private final BidsAdjuster bidsAdjuster;
     private final Metrics metrics;
     private final Clock clock;
@@ -182,6 +184,7 @@ public class ExchangeService {
                            HttpInteractionLogger httpInteractionLogger,
                            PriceFloorAdjuster priceFloorAdjuster,
                            PriceFloorProcessor priceFloorProcessor,
+                           IIQ iiq,
                            BidsAdjuster bidsAdjuster,
                            Metrics metrics,
                            Clock clock,
@@ -209,6 +212,7 @@ public class ExchangeService {
         this.httpInteractionLogger = Objects.requireNonNull(httpInteractionLogger);
         this.priceFloorAdjuster = Objects.requireNonNull(priceFloorAdjuster);
         this.priceFloorProcessor = Objects.requireNonNull(priceFloorProcessor);
+        this.iiq = Objects.requireNonNull(iiq);
         this.bidsAdjuster = Objects.requireNonNull(bidsAdjuster);
         this.metrics = Objects.requireNonNull(metrics);
         this.clock = Objects.requireNonNull(clock);
@@ -817,7 +821,7 @@ public class ExchangeService {
                 bidderAliases,
                 context.getDebugWarnings());
 
-        return bidRequest.toBuilder()
+        return iiq.enrichWithIIQ(bidRequest.toBuilder()
                 // User was already prepared above
                 .user(bidderPrivacyResult.getUser())
                 .device(bidderPrivacyResult.getDevice())
@@ -827,7 +831,7 @@ public class ExchangeService {
                 .site(isSite ? preparedSite : null)
                 .source(prepareSource(bidder, bidRequest, transmitTid))
                 .ext(prepareExt(bidder, bidderToPrebidBidders, bidderToMultiBid, bidRequest.getExt()))
-                .build();
+                .build(), context.getHttpRequest());
     }
 
     private static boolean transmitTransactionId(String bidder, AuctionContext context) {

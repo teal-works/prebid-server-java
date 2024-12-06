@@ -75,6 +75,7 @@ import org.prebid.server.bidder.BidderErrorNotifier;
 import org.prebid.server.bidder.BidderRequestCompletionTrackerFactory;
 import org.prebid.server.bidder.HttpBidderRequestEnricher;
 import org.prebid.server.bidder.HttpBidderRequester;
+import org.prebid.server.bids.IIQ;
 import org.prebid.server.cache.BasicPbcStorageService;
 import org.prebid.server.cache.CoreCacheService;
 import org.prebid.server.cache.PbcStorageService;
@@ -155,6 +156,18 @@ public class ServiceConfiguration {
 
     @Value("${logging.sampling-rate:0.01}")
     private double logSamplingRate;
+
+    @Bean
+    IIQ iiq(
+            HttpClient httpClient,
+            JacksonMapper mapper,
+            Ortb2ImplicitParametersResolver implicitParametersResolver) {
+
+        return new IIQ(
+                httpClient,
+                mapper,
+                implicitParametersResolver);
+    }
 
     @Bean
     CoreCacheService cacheService(
@@ -851,6 +864,7 @@ public class ServiceConfiguration {
             HttpInteractionLogger httpInteractionLogger,
             PriceFloorAdjuster priceFloorAdjuster,
             PriceFloorProcessor priceFloorProcessor,
+            IIQ iiq,
             BidsAdjuster bidsAdjuster,
             Metrics metrics,
             Clock clock,
@@ -879,6 +893,7 @@ public class ServiceConfiguration {
                 httpInteractionLogger,
                 priceFloorAdjuster,
                 priceFloorProcessor,
+                iiq,
                 bidsAdjuster,
                 metrics,
                 clock,
