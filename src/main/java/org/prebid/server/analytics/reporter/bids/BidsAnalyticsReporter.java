@@ -62,6 +62,7 @@ public class BidsAnalyticsReporter implements AnalyticsReporter {
         final EventRequest eventReq = notificationEvent.getEventRequest();
         try {
             return mapper.mapper().readTree("{\"account\":\"" + eventReq.getAccountId()
+                    + "\",\"bidder\":\"" + new String(encoder.quoteAsString(eventReq.getBidder()))
                     + "\",\"price\":\"" + eventReq.getPrice().setScale(5, RoundingMode.HALF_DOWN)
                     .stripTrailingZeros().toPlainString()
                     + "\",\"url\":\"" + new String(encoder.quoteAsString(eventReq.getUrl()))
