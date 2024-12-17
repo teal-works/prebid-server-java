@@ -54,11 +54,9 @@ import org.prebid.server.auction.privacy.contextfactory.AmpPrivacyContextFactory
 import org.prebid.server.auction.privacy.contextfactory.AuctionPrivacyContextFactory;
 import org.prebid.server.auction.privacy.contextfactory.CookieSyncPrivacyContextFactory;
 import org.prebid.server.auction.privacy.contextfactory.SetuidPrivacyContextFactory;
-import org.prebid.server.auction.privacy.enforcement.ActivityEnforcement;
 import org.prebid.server.auction.privacy.enforcement.CcpaEnforcement;
-import org.prebid.server.auction.privacy.enforcement.CoppaEnforcement;
+import org.prebid.server.auction.privacy.enforcement.PrivacyEnforcement;
 import org.prebid.server.auction.privacy.enforcement.PrivacyEnforcementService;
-import org.prebid.server.auction.privacy.enforcement.TcfEnforcement;
 import org.prebid.server.auction.requestfactory.AmpRequestFactory;
 import org.prebid.server.auction.requestfactory.AuctionRequestFactory;
 import org.prebid.server.auction.requestfactory.Ortb2ImplicitParametersResolver;
@@ -111,6 +109,7 @@ import org.prebid.server.privacy.PrivacyExtractor;
 import org.prebid.server.privacy.gdpr.TcfDefinerService;
 import org.prebid.server.settings.ApplicationSettings;
 import org.prebid.server.settings.model.BidValidationEnforcement;
+import org.prebid.server.spring.config.model.CacheDefaultTtlProperties;
 import org.prebid.server.spring.config.model.ExternalConversionProperties;
 import org.prebid.server.spring.config.model.HttpClientCircuitBreakerProperties;
 import org.prebid.server.spring.config.model.HttpClientProperties;
@@ -810,6 +809,16 @@ public class ServiceConfiguration {
     }
 
     @Bean
+    CacheDefaultTtlProperties cacheDefaultTtlProperties(
+            @Value("${cache.default-ttl-seconds.banner:300}") Integer bannerTtl,
+            @Value("${cache.default-ttl-seconds.video:1500}") Integer videoTtl,
+            @Value("${cache.default-ttl-seconds.audio:1500}") Integer audioTtl,
+            @Value("${cache.default-ttl-seconds.native:300}") Integer nativeTtl) {
+
+        return CacheDefaultTtlProperties.of(bannerTtl, videoTtl, audioTtl, nativeTtl);
+    }
+
+    @Bean
     BidResponseCreator bidResponseCreator(
             CoreCacheService coreCacheService,
             BidderCatalog bidderCatalog,
@@ -824,7 +833,8 @@ public class ServiceConfiguration {
             Clock clock,
             JacksonMapper mapper,
             @Value("${cache.banner-ttl-seconds:#{null}}") Integer bannerCacheTtl,
-            @Value("${cache.video-ttl-seconds:#{null}}") Integer videoCacheTtl) {
+            @Value("${cache.video-ttl-seconds:#{null}}") Integer videoCacheTtl,
+            CacheDefaultTtlProperties cacheDefaultTtlProperties) {
 
         return new BidResponseCreator(
                 coreCacheService,
@@ -839,7 +849,8 @@ public class ServiceConfiguration {
                 truncateAttrChars,
                 clock,
                 mapper,
-                CacheTtl.of(bannerCacheTtl, videoCacheTtl));
+                CacheTtl.of(bannerCacheTtl, videoCacheTtl),
+                cacheDefaultTtlProperties);
     }
 
     @Bean
@@ -948,16 +959,8 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    PrivacyEnforcementService privacyEnforcementService(CoppaEnforcement coppaEnforcement,
-                                                        CcpaEnforcement ccpaEnforcement,
-                                                        TcfEnforcement tcfEnforcement,
-                                                        ActivityEnforcement activityEnforcement) {
-
-        return new PrivacyEnforcementService(
-                coppaEnforcement,
-                ccpaEnforcement,
-                tcfEnforcement,
-                activityEnforcement);
+    PrivacyEnforcementService privacyEnforcementService(List<PrivacyEnforcement> enforcements) {
+        return new PrivacyEnforcementService(enforcements);
     }
 
     @Bean

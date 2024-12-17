@@ -15,6 +15,7 @@ import org.prebid.server.activity.infrastructure.creator.ActivityInfrastructureC
 import org.prebid.server.analytics.reporter.AnalyticsReporterDelegator;
 import org.prebid.server.auction.AmpResponsePostProcessor;
 import org.prebid.server.auction.ExchangeService;
+import org.prebid.server.auction.HooksMetricsService;
 import org.prebid.server.auction.SkippedAuctionService;
 import org.prebid.server.auction.VideoResponseFactory;
 import org.prebid.server.auction.gpp.CookieSyncGppService;
@@ -50,6 +51,7 @@ import org.prebid.server.handler.openrtb2.AmpHandler;
 import org.prebid.server.handler.openrtb2.VideoHandler;
 import org.prebid.server.health.HealthChecker;
 import org.prebid.server.health.PeriodicHealthChecker;
+import org.prebid.server.hooks.execution.HookStageExecutor;
 import org.prebid.server.json.JacksonMapper;
 import org.prebid.server.log.HttpInteractionLogger;
 import org.prebid.server.log.Logger;
@@ -219,9 +221,11 @@ public class ApplicationServerConfiguration {
             AuctionRequestFactory auctionRequestFactory,
             AnalyticsReporterDelegator analyticsReporter,
             Metrics metrics,
+            HooksMetricsService hooksMetricsService,
             Clock clock,
             HttpInteractionLogger httpInteractionLogger,
             PrebidVersionProvider prebidVersionProvider,
+            HookStageExecutor hookStageExecutor,
             JacksonMapper mapper) {
 
         return new org.prebid.server.handler.openrtb2.AuctionHandler(
@@ -231,9 +235,11 @@ public class ApplicationServerConfiguration {
                 skippedAuctionService,
                 analyticsReporter,
                 metrics,
+                hooksMetricsService,
                 clock,
                 httpInteractionLogger,
                 prebidVersionProvider,
+                hookStageExecutor,
                 mapper);
     }
 
@@ -243,12 +249,14 @@ public class ApplicationServerConfiguration {
             ExchangeService exchangeService,
             AnalyticsReporterDelegator analyticsReporter,
             Metrics metrics,
+            HooksMetricsService hooksMetricsService,
             Clock clock,
             BidderCatalog bidderCatalog,
             AmpProperties ampProperties,
             AmpResponsePostProcessor ampResponsePostProcessor,
             HttpInteractionLogger httpInteractionLogger,
             PrebidVersionProvider prebidVersionProvider,
+            HookStageExecutor hookStageExecutor,
             JacksonMapper mapper) {
 
         return new AmpHandler(
@@ -256,12 +264,14 @@ public class ApplicationServerConfiguration {
                 exchangeService,
                 analyticsReporter,
                 metrics,
+                hooksMetricsService,
                 clock,
                 bidderCatalog,
                 ampProperties.getCustomTargetingSet(),
                 ampResponsePostProcessor,
                 httpInteractionLogger,
                 prebidVersionProvider,
+                hookStageExecutor,
                 mapper,
                 logSamplingRate);
     }
@@ -274,8 +284,10 @@ public class ApplicationServerConfiguration {
             CoreCacheService coreCacheService,
             AnalyticsReporterDelegator analyticsReporter,
             Metrics metrics,
+            HooksMetricsService hooksMetricsService,
             Clock clock,
             PrebidVersionProvider prebidVersionProvider,
+            HookStageExecutor hookStageExecutor,
             JacksonMapper mapper) {
 
         return new VideoHandler(
@@ -284,8 +296,10 @@ public class ApplicationServerConfiguration {
                 exchangeService,
                 coreCacheService, analyticsReporter,
                 metrics,
+                hooksMetricsService,
                 clock,
                 prebidVersionProvider,
+                hookStageExecutor,
                 mapper);
     }
 

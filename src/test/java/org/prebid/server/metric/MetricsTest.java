@@ -332,6 +332,16 @@ public class MetricsTest {
     }
 
     @Test
+    public void updateDebugRequestsMetricsShouldIncrementMetrics() {
+        // when
+        metrics.updateDebugRequestMetrics(false);
+        metrics.updateDebugRequestMetrics(true);
+
+        // then
+        assertThat(metricRegistry.counter("debug_requests").getCount()).isOne();
+    }
+
+    @Test
     public void updateImpTypesMetricsByCountPerMediaTypeShouldIncrementMetrics() {
         // given
         final Map<String, Long> mediaTypeToCount = new HashMap<>();
@@ -425,6 +435,16 @@ public class MetricsTest {
         // then
         assertThat(metricRegistry.counter("account.accountId.requests").getCount()).isOne();
         assertThat(metricRegistry.counter("account.accountId.requests.type.openrtb2-web").getCount()).isOne();
+    }
+
+    @Test
+    public void updateAccountDebugRequestMetricsShouldIncrementMetrics() {
+        // when
+        metrics.updateAccountDebugRequestMetrics(Account.empty(ACCOUNT_ID), false);
+        metrics.updateAccountDebugRequestMetrics(Account.empty(ACCOUNT_ID), true);
+
+        // then
+        assertThat(metricRegistry.counter("account.accountId.debug_requests").getCount()).isOne();
     }
 
     @Test
@@ -916,6 +936,8 @@ public class MetricsTest {
         given(accountMetricsVerbosityResolver.forAccount(any())).willReturn(AccountMetricsVerbosityLevel.none);
 
         // when
+        metrics.updateAccountDebugRequestMetrics(Account.empty(ACCOUNT_ID), false);
+        metrics.updateAccountDebugRequestMetrics(Account.empty(ACCOUNT_ID), true);
         metrics.updateAccountRequestMetrics(Account.empty(ACCOUNT_ID), MetricName.openrtb2web);
         metrics.updateAdapterResponseTime(RUBICON, Account.empty(ACCOUNT_ID), 500);
         metrics.updateAdapterRequestNobidMetrics(RUBICON, Account.empty(ACCOUNT_ID));
@@ -924,6 +946,7 @@ public class MetricsTest {
 
         // then
         assertThat(metricRegistry.counter("account.accountId.requests").getCount()).isZero();
+        assertThat(metricRegistry.counter("account.accountId.debug_requests").getCount()).isZero();
         assertThat(metricRegistry.counter("account.accountId.requests.type.openrtb2-web").getCount()).isZero();
         assertThat(metricRegistry.timer("account.accountId.rubicon.request_time").getCount()).isZero();
         assertThat(metricRegistry.counter("account.accountId.rubicon.requests.nobid").getCount()).isZero();
@@ -939,6 +962,8 @@ public class MetricsTest {
 
         // when
         metrics.updateAccountRequestMetrics(Account.empty(ACCOUNT_ID), MetricName.openrtb2web);
+        metrics.updateAccountDebugRequestMetrics(Account.empty(ACCOUNT_ID), false);
+        metrics.updateAccountDebugRequestMetrics(Account.empty(ACCOUNT_ID), true);
         metrics.updateAdapterResponseTime(RUBICON, Account.empty(ACCOUNT_ID), 500);
         metrics.updateAdapterRequestNobidMetrics(RUBICON, Account.empty(ACCOUNT_ID));
         metrics.updateAdapterRequestGotbidsMetrics(RUBICON, Account.empty(ACCOUNT_ID));
@@ -946,6 +971,7 @@ public class MetricsTest {
 
         // then
         assertThat(metricRegistry.counter("account.accountId.requests").getCount()).isOne();
+        assertThat(metricRegistry.counter("account.accountId.debug_requests").getCount()).isZero();
         assertThat(metricRegistry.counter("account.accountId.requests.type.openrtb2-web").getCount()).isZero();
         assertThat(metricRegistry.timer("account.accountId.rubicon.request_time").getCount()).isZero();
         assertThat(metricRegistry.counter("account.accountId.rubicon.requests.nobid").getCount()).isZero();
@@ -1187,6 +1213,9 @@ public class MetricsTest {
         metrics.updateHooksMetrics(
                 "module2", Stage.auction_response, "hook4", ExecutionStatus.invocation_failure, 5L, null);
 
+        metrics.updateHooksMetrics(
+                "module1", Stage.exitpoint, "hook5", ExecutionStatus.success, 5L, ExecutionAction.update);
+
         // then
         assertThat(metricRegistry.counter("modules.module.module1.stage.entrypoint.hook.hook1.call")
                 .getCount())
@@ -1245,6 +1274,15 @@ public class MetricsTest {
                 .getCount())
                 .isEqualTo(1);
         assertThat(metricRegistry.timer("modules.module.module2.stage.auctionresponse.hook.hook4.duration").getCount())
+                .isEqualTo(1);
+
+        assertThat(metricRegistry.counter("modules.module.module1.stage.exitpoint.hook.hook5.call")
+                .getCount())
+                .isEqualTo(1);
+        assertThat(metricRegistry.counter("modules.module.module1.stage.exitpoint.hook.hook5.success.update")
+                .getCount())
+                .isEqualTo(1);
+        assertThat(metricRegistry.timer("modules.module.module1.stage.exitpoint.hook.hook5.duration").getCount())
                 .isEqualTo(1);
     }
 
