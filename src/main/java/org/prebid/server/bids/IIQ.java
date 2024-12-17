@@ -227,7 +227,7 @@ public class IIQ {
     public BidRequest enrichWithIIQ(BidRequest bidRequest, HttpRequestContext request, State state) {
         //TODO: redis 2nd level cache
         final Device device = bidRequest.getDevice();
-        Device deviceWithIP = device;
+        Device deviceWithIP = device == null ? Device.builder().build() : device;
         if (device.getGeo() != null && device.getGeo().getCountry() != null
                 && COUNTRY_WHITELIST.contains(device.getGeo().getCountry())) {
 
@@ -249,7 +249,11 @@ public class IIQ {
             }
             final String domain = bidRequest.getSite() != null && bidRequest.getSite().getDomain() != null
                     ? bidRequest.getSite().getDomain() : "teal.works";
-            final List<Eid> exisitingEuids = bidRequest.getUser().getEids();
+
+            List<Eid> exisitingEuids = null;
+            if (bidRequest.getUser() != null) {
+                exisitingEuids = bidRequest.getUser().getEids();
+            }
             final IDs ids = new IDs("", "", "", "");
 
             if (exisitingEuids != null) {
