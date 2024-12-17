@@ -15,6 +15,7 @@ import org.prebid.server.analytics.AnalyticsReporter;
 import org.prebid.server.analytics.model.NotificationEvent;
 import org.prebid.server.analytics.reporter.AnalyticsReporterDelegator;
 import org.prebid.server.auction.gpp.model.GppContextCreator;
+import org.prebid.server.bids.IIQ;
 import org.prebid.server.events.EventRequest;
 import org.prebid.server.events.EventUtil;
 import org.prebid.server.exception.PreBidException;
@@ -54,6 +55,24 @@ public class NotificationEventHandler implements ApplicationResource {
     private final ApplicationSettings applicationSettings;
     private final long defaultTimeoutMillis;
     private final TrackingPixel trackingPixel;
+    private final IIQ iiq;
+
+    public NotificationEventHandler(ActivityInfrastructureCreator activityInfrastructureCreator,
+                                    AnalyticsReporterDelegator analyticsDelegator,
+                                    TimeoutFactory timeoutFactory,
+                                    ApplicationSettings applicationSettings,
+                                    IIQ iiq,
+                                    long defaultTimeoutMillis) {
+
+        this.activityInfrastructureCreator = Objects.requireNonNull(activityInfrastructureCreator);
+        this.analyticsDelegator = Objects.requireNonNull(analyticsDelegator);
+        this.timeoutFactory = Objects.requireNonNull(timeoutFactory);
+        this.applicationSettings = Objects.requireNonNull(applicationSettings);
+        this.iiq = Objects.requireNonNull(iiq);
+        this.defaultTimeoutMillis = defaultTimeoutMillis;
+
+        trackingPixel = createTrackingPixel();
+    }
 
     public NotificationEventHandler(ActivityInfrastructureCreator activityInfrastructureCreator,
                                     AnalyticsReporterDelegator analyticsDelegator,
@@ -66,6 +85,7 @@ public class NotificationEventHandler implements ApplicationResource {
         this.timeoutFactory = Objects.requireNonNull(timeoutFactory);
         this.applicationSettings = Objects.requireNonNull(applicationSettings);
         this.defaultTimeoutMillis = defaultTimeoutMillis;
+        this.iiq = null;
 
         trackingPixel = createTrackingPixel();
     }
@@ -165,6 +185,9 @@ public class NotificationEventHandler implements ApplicationResource {
                     .build();
 
             analyticsDelegator.processEvent(notificationEvent);
+            if (iiq != null) {
+                iiq.triggerImpressionAnalytics(notificationEvent);
+            }
         }
         respondWithOk(routingContext, eventRequest.getFormat() == EventRequest.Format.image);
     }

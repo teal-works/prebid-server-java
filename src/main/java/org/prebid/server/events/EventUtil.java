@@ -149,6 +149,7 @@ public class EventUtil {
                 .price(price)
                 .url(queryParams.get("u"))
                 .impId(queryParams.get("c"))
+                .abTestUuid(queryParams.get("ab"))
                 .timestamp(timestamp)
                 .format(format)
                 .analytics(analytics)
@@ -193,6 +194,11 @@ public class EventUtil {
         // url
         if (StringUtils.isNotEmpty(eventRequest.getUrl())) {
             result.append(nameValueAsQueryString("u", HttpUtil.encodeUrl(eventRequest.getUrl())));
+        }
+
+        // abTestUuid
+        if (StringUtils.isNotEmpty(eventRequest.getAbTestUuid())) {
+            result.append(nameValueAsQueryString("ab", HttpUtil.encodeUrl(eventRequest.getAbTestUuid())));
         }
 
         // tag ID

@@ -253,10 +253,13 @@ public class ExchangeService {
         final Map<String, MultiBidConfig> bidderToMultiBid = bidderToMultiBids(bidRequest, debugWarnings);
         receivedContext.getBidRejectionTrackers().putAll(makeBidRejectionTrackers(bidRequest, aliases));
 
+        final IIQ.State state = new IIQ.State("");
+
         return storedResponseProcessor.getStoredResponseResult(bidRequest.getImp(), timeout)
                 .map(storedResponseResult -> populateStoredResponse(storedResponseResult, storedAuctionResponses))
                 .compose(storedResponseResult ->
-                        extractAuctionParticipations(receivedContext, storedResponseResult, aliases, bidderToMultiBid)
+                        extractAuctionParticipations(receivedContext, storedResponseResult, aliases,
+                                bidderToMultiBid, state)
                                 .map(receivedContext::with))
 
                 .map(context -> updateRequestMetric(context, uidsCookie, aliases, account, requestTypeMetric))
@@ -284,7 +287,7 @@ public class ExchangeService {
                         .map(auctionParticipations -> updateResponsesMetrics(auctionParticipations, account, aliases))
                         .map(context::with))
                 // produce response from bidder results
-                .compose(context -> bidResponseCreator.create(context, cacheInfo, bidderToMultiBid)
+                .compose(context -> bidResponseCreator.create(context, cacheInfo, bidderToMultiBid, state)
                         .map(bidResponse -> criteriaLogManager.traceResponse(
                                 logger,
                                 bidResponse,
@@ -438,7 +441,8 @@ public class ExchangeService {
             AuctionContext context,
             StoredResponseResult storedResponseResult,
             BidderAliases aliases,
-            Map<String, MultiBidConfig> bidderToMultiBid) {
+            Map<String, MultiBidConfig> bidderToMultiBid,
+            IIQ.State state) {
 
         final List<Imp> imps = storedResponseResult.getRequiredRequestImps().stream()
                 .filter(imp -> bidderParamsFromImpExt(imp.getExt()) != null)
@@ -458,7 +462,8 @@ public class ExchangeService {
                 aliases,
                 impBidderToStoredBidResponse,
                 imps,
-                bidderToMultiBid);
+                bidderToMultiBid,
+                state);
     }
 
     private Set<String> bidderNamesFromImpExt(Imp imp, BidderAliases aliases) {
@@ -493,7 +498,8 @@ public class ExchangeService {
             BidderAliases aliases,
             Map<String, Map<String, String>> impBidderToStoredResponse,
             List<Imp> imps,
-            Map<String, MultiBidConfig> bidderToMultiBid) {
+            Map<String, MultiBidConfig> bidderToMultiBid,
+            IIQ.State state) {
 
         final BidRequest bidRequest = context.getBidRequest();
         final ExtRequest requestExt = bidRequest.getExt();
@@ -512,7 +518,8 @@ public class ExchangeService {
                         bidderToMultiBid,
                         biddersToConfigs,
                         aliases,
-                        context));
+                        context,
+                        state));
     }
 
     private Map<String, ExtBidderConfigOrtb> getBiddersToConfigs(ExtRequestPrebid prebid) {
@@ -650,7 +657,8 @@ public class ExchangeService {
             Map<String, MultiBidConfig> bidderToMultiBid,
             Map<String, ExtBidderConfigOrtb> biddersToConfigs,
             BidderAliases aliases,
-            AuctionContext context) {
+            AuctionContext context,
+            IIQ.State state) {
 
         final Map<String, JsonNode> bidderToPrebidBidders = bidderToPrebidBidders(bidRequest);
         final List<AuctionParticipation> bidderRequests = bidderPrivacyResults.stream()
@@ -665,7 +673,8 @@ public class ExchangeService {
                         biddersToConfigs,
                         bidderToPrebidBidders,
                         aliases,
-                        context))
+                        context,
+                        state))
                 // Can't be removed after we prepare workflow to filter blocked
                 .filter(auctionParticipation -> !auctionParticipation.isRequestBlocked())
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -702,7 +711,8 @@ public class ExchangeService {
             Map<String, ExtBidderConfigOrtb> biddersToConfigs,
             Map<String, JsonNode> bidderToPrebidBidders,
             BidderAliases bidderAliases,
-            AuctionContext context) {
+            AuctionContext context,
+            IIQ.State state) {
 
         final boolean blockedRequestByTcf = bidderPrivacyResult.isBlockedRequestByTcf();
         final boolean blockedAnalyticsByTcf = bidderPrivacyResult.isBlockedAnalyticsByTcf();
@@ -731,7 +741,8 @@ public class ExchangeService {
                 biddersToConfigs,
                 bidderToPrebidBidders,
                 bidderAliases,
-                context);
+                context,
+                state);
 
         final BidderRequest bidderRequest = BidderRequest.builder()
                 .bidder(bidder)
@@ -758,7 +769,8 @@ public class ExchangeService {
                                          Map<String, ExtBidderConfigOrtb> biddersToConfigs,
                                          Map<String, JsonNode> bidderToPrebidBidders,
                                          BidderAliases bidderAliases,
-                                         AuctionContext context) {
+                                         AuctionContext context,
+                                         IIQ.State state) {
 
         final String bidder = bidderPrivacyResult.getRequestBidder();
         final BidRequest bidRequest = priceFloorProcessor.enrichWithPriceFloors(
@@ -831,7 +843,7 @@ public class ExchangeService {
                 .site(isSite ? preparedSite : null)
                 .source(prepareSource(bidder, bidRequest, transmitTid))
                 .ext(prepareExt(bidder, bidderToPrebidBidders, bidderToMultiBid, bidRequest.getExt()))
-                .build(), context.getHttpRequest());
+                .build(), context.getHttpRequest(), state);
     }
 
     private static boolean transmitTransactionId(String bidder, AuctionContext context) {

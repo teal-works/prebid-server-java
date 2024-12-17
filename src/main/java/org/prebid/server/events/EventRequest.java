@@ -36,6 +36,8 @@ public class EventRequest {
 
     String impId;
 
+    String abTestUuid;
+
     public enum Type {
 
         win, imp

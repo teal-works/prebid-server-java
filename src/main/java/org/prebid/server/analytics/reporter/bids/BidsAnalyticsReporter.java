@@ -61,13 +61,19 @@ public class BidsAnalyticsReporter implements AnalyticsReporter {
     private JsonNode getEventData(NotificationEvent notificationEvent) {
         final EventRequest eventReq = notificationEvent.getEventRequest();
         try {
-            return mapper.mapper().readTree("{\"account\":\"" + eventReq.getAccountId()
-                    + "\",\"bidder\":\"" + new String(encoder.quoteAsString(eventReq.getBidder()))
-                    + "\",\"price\":\"" + eventReq.getPrice().setScale(5, RoundingMode.HALF_DOWN)
-                    .stripTrailingZeros().toPlainString()
-                    + "\",\"url\":\"" + new String(encoder.quoteAsString(eventReq.getUrl()))
-                    + "\",\"impId\":\"" + new String(encoder.quoteAsString(eventReq.getImpId()))
-                    + "\",\"auctionId\":\"" + new String(encoder.quoteAsString(eventReq.getAuctionId())) + "\"}");
+            return mapper.mapper().readTree("{\"account\":\""
+                    + (eventReq.getAccountId() != null ? eventReq.getAccountId() : "")
+                    + "\",\"bidder\":\"" + (eventReq.getBidder() != null
+                    ? new String(encoder.quoteAsString(eventReq.getBidder())) : "")
+                    + "\",\"price\":\"" + (eventReq.getPrice() != null
+                    ? eventReq.getPrice().setScale(5, RoundingMode.HALF_DOWN)
+                    .stripTrailingZeros().toPlainString() : "")
+                    + "\",\"url\":\"" + (eventReq.getUrl() != null
+                    ? new String(encoder.quoteAsString(eventReq.getUrl())) : "")
+                    + "\",\"impId\":\"" + (eventReq.getImpId() != null
+                    ? new String(encoder.quoteAsString(eventReq.getImpId())) : "")
+                    + "\",\"auctionId\":\"" + (eventReq.getAuctionId() != null
+                    ? new String(encoder.quoteAsString(eventReq.getAuctionId())) : "") + "\"}");
         } catch (JsonProcessingException e) {
             logger.error("Bids log adapter failed to parse JSON.");
         }

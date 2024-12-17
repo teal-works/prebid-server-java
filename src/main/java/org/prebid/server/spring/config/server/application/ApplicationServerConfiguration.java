@@ -25,6 +25,7 @@ import org.prebid.server.auction.requestfactory.AmpRequestFactory;
 import org.prebid.server.auction.requestfactory.AuctionRequestFactory;
 import org.prebid.server.auction.requestfactory.VideoRequestFactory;
 import org.prebid.server.bidder.BidderCatalog;
+import org.prebid.server.bids.IIQ;
 import org.prebid.server.cache.CoreCacheService;
 import org.prebid.server.cookie.CookieDeprecationService;
 import org.prebid.server.cookie.CookieSyncService;
@@ -51,6 +52,8 @@ import org.prebid.server.health.HealthChecker;
 import org.prebid.server.health.PeriodicHealthChecker;
 import org.prebid.server.json.JacksonMapper;
 import org.prebid.server.log.HttpInteractionLogger;
+import org.prebid.server.log.Logger;
+import org.prebid.server.log.LoggerFactory;
 import org.prebid.server.metric.Metrics;
 import org.prebid.server.optout.GoogleRecaptchaVerifier;
 import org.prebid.server.privacy.HostVendorTcfDefinerService;
@@ -159,6 +162,8 @@ public class ApplicationServerConfiguration {
         return ExceptionHandler.create(metrics);
     }
 
+    public static final Logger logger = LoggerFactory.getLogger(ApplicationServerConfiguration.class);
+
     @Bean
     Router applicationServerRouter(Vertx vertx,
                                    BodyHandler bodyHandler,
@@ -175,7 +180,11 @@ public class ApplicationServerConfiguration {
 
         resources.forEach(resource ->
                 resource.endpoints().forEach(endpoint ->
-                        router.route(endpoint.getMethod(), endpoint.getPath()).handler(resource)));
+                        router.route(endpoint.getMethod(), endpoint.getPath()).handler(resource)
+                                .failureHandler(r -> {
+                                    r.response().setStatusCode(500).end("Internal server error");
+                                    logger.error(r.failure().getMessage());
+                                })));
 
         applicationPortAdminResourcesBinder.bind(router);
 
@@ -423,6 +432,7 @@ public class ApplicationServerConfiguration {
                                                       AnalyticsReporterDelegator analyticsReporterDelegator,
                                                       TimeoutFactory timeoutFactory,
                                                       ApplicationSettings applicationSettings,
+                                                      IIQ iiq,
                                                       @Value("${event.default-timeout-ms}") long defaultTimeoutMillis) {
 
         return new NotificationEventHandler(
@@ -430,6 +440,7 @@ public class ApplicationServerConfiguration {
                 analyticsReporterDelegator,
                 timeoutFactory,
                 applicationSettings,
+                iiq,
                 defaultTimeoutMillis);
     }
 

@@ -174,6 +174,7 @@ public class EventsService {
                 .price(price)
                 .url(url)
                 .impId(impId)
+                .abTestUuid(eventsContext.getState().getAbTestUuid())
                 .timestamp(eventsContext.getAuctionTimestamp())
                 .format(format)
                 .integration(eventsContext.getIntegration())

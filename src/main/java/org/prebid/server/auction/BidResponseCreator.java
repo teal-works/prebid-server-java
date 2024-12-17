@@ -42,6 +42,7 @@ import org.prebid.server.bidder.model.BidderBid;
 import org.prebid.server.bidder.model.BidderError;
 import org.prebid.server.bidder.model.BidderSeatBid;
 import org.prebid.server.bidder.model.BidderSeatBidInfo;
+import org.prebid.server.bids.IIQ;
 import org.prebid.server.cache.CoreCacheService;
 import org.prebid.server.cache.model.CacheContext;
 import org.prebid.server.cache.model.CacheInfo;
@@ -205,19 +206,32 @@ public class BidResponseCreator {
 
     Future<BidResponse> create(AuctionContext auctionContext,
                                BidRequestCacheInfo cacheInfo,
+                               Map<String, MultiBidConfig> bidderToMultiBids,
+                               IIQ.State state) {
+
+        return videoStoredDataResult(auctionContext)
+                .compose(videoStoredData -> create(videoStoredData, auctionContext, cacheInfo,
+                        bidderToMultiBids, state))
+                .map(bidResponse -> populateSeatNonBid(auctionContext, bidResponse));
+    }
+
+    Future<BidResponse> create(AuctionContext auctionContext,
+                               BidRequestCacheInfo cacheInfo,
                                Map<String, MultiBidConfig> bidderToMultiBids) {
 
         return videoStoredDataResult(auctionContext)
-                .compose(videoStoredData -> create(videoStoredData, auctionContext, cacheInfo, bidderToMultiBids))
+                .compose(videoStoredData -> create(videoStoredData, auctionContext, cacheInfo,
+                        bidderToMultiBids, null))
                 .map(bidResponse -> populateSeatNonBid(auctionContext, bidResponse));
     }
 
     private Future<BidResponse> create(VideoStoredDataResult videoStoredDataResult,
                                        AuctionContext auctionContext,
                                        BidRequestCacheInfo cacheInfo,
-                                       Map<String, MultiBidConfig> bidderToMultiBids) {
+                                       Map<String, MultiBidConfig> bidderToMultiBids,
+                                       IIQ.State state) {
 
-        final EventsContext eventsContext = createEventsContext(auctionContext);
+        final EventsContext eventsContext = createEventsContext(auctionContext, state);
 
         final List<BidderResponse> bidderResponses = auctionContext.getAuctionParticipations().stream()
                 .filter(auctionParticipation -> !auctionParticipation.isRequestBlocked())
@@ -374,7 +388,8 @@ public class BidResponseCreator {
                                             String effectiveBidId) {
 
         final Video storedVideo = videoStoredDataResult.getImpIdToStoredVideo().get(bid.getImpid());
-        final Events events = createEvents(bidder, price, url, impId, account, effectiveBidId, eventsContext);
+        final Events events = createEvents(bidder, price, url, impId,
+                account, effectiveBidId, eventsContext);
         final ExtBidPrebidVideo extBidPrebidVideo = getExtBidPrebidVideo(bid.getExt()).orElse(null);
 
         final ExtBidPrebid.ExtBidPrebidBuilder extBidPrebidBuilder = getExtPrebid(bid.getExt(), ExtBidPrebid.class)
@@ -1469,13 +1484,14 @@ public class BidResponseCreator {
                 .orElse(com.iab.openrtb.request.Asset.EMPTY);
     }
 
-    private EventsContext createEventsContext(AuctionContext auctionContext) {
+    private EventsContext createEventsContext(AuctionContext auctionContext, IIQ.State state) {
         return EventsContext.builder()
                 .auctionId(auctionContext.getBidRequest().getId())
                 .enabledForAccount(eventsEnabledForAccount(auctionContext))
                 .enabledForRequest(eventsEnabledForRequest(auctionContext))
                 .auctionTimestamp(auctionTimestamp(auctionContext))
                 .integration(integrationFrom(auctionContext))
+                .state(state)
                 .build();
     }
 

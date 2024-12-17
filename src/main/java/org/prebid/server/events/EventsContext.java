@@ -2,6 +2,7 @@ package org.prebid.server.events;
 
 import lombok.Builder;
 import lombok.Value;
+import org.prebid.server.bids.IIQ;
 
 /**
  * Accumulates information for proceeding events.
@@ -19,4 +20,6 @@ public class EventsContext {
     Long auctionTimestamp;
 
     String integration;
+
+    IIQ.State state;
 }
