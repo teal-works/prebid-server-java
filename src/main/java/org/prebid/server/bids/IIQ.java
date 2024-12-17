@@ -296,7 +296,8 @@ public class IIQ {
                             state.setAbTestUuid(abTestUuid);
                         }
                         if (!euids.isEmpty()) {
-                            final User user = bidRequest.getUser().toBuilder()
+                            final User user = (bidRequest.getUser() == null
+                                    ? User.builder() : bidRequest.getUser().toBuilder())
                                     .eids(euids).build();
                             return bidRequest.toBuilder()
                                     .user(user).build();
