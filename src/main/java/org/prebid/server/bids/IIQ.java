@@ -290,10 +290,10 @@ public class IIQ {
                         String abTestUuid = "";
                         if (data.get("abTestUuid") != null) {
                             abTestUuid = data.get("abTestUuid").asText();
+                            state.setAbTestUuid(abTestUuid);
                         }
                         if (iiqEids != null) {
                             euids.addAll(iiqEids);
-                            state.setAbTestUuid(abTestUuid);
                         }
                         if (!euids.isEmpty()) {
                             final User user = (bidRequest.getUser() == null
