@@ -275,6 +275,9 @@ public class IIQ {
             }
             final JsonNode data = fetch(deviceWithIP, domain, ids);
             if (data != null) {
+                if (data.get("abTestUuid") != null) {
+                    state.setAbTestUuid(data.get("abTestUuid").asText());
+                }
                 if (data.get("data") != null && data.get("data").get("eids") != null) {
                     final ObjectReader reader = mapper.mapper().readerFor(new TypeReference<List<Eid>>() {
                     });
@@ -286,11 +289,6 @@ public class IIQ {
                                 euids.add(id);
                                 iiqEids.removeIf(e -> e.getSource().equals(id.getSource()));
                             });
-                        }
-                        String abTestUuid = "";
-                        if (data.get("abTestUuid") != null) {
-                            abTestUuid = data.get("abTestUuid").asText();
-                            state.setAbTestUuid(abTestUuid);
                         }
                         if (iiqEids != null) {
                             euids.addAll(iiqEids);
