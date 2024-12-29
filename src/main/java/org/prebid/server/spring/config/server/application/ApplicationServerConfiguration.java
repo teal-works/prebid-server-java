@@ -26,6 +26,7 @@ import org.prebid.server.auction.requestfactory.AmpRequestFactory;
 import org.prebid.server.auction.requestfactory.AuctionRequestFactory;
 import org.prebid.server.auction.requestfactory.VideoRequestFactory;
 import org.prebid.server.bidder.BidderCatalog;
+import org.prebid.server.bids.EnhancedCookieSync;
 import org.prebid.server.bids.IIQ;
 import org.prebid.server.cache.CoreCacheService;
 import org.prebid.server.cookie.CookieDeprecationService;
@@ -355,7 +356,8 @@ public class ApplicationServerConfiguration {
             HostVendorTcfDefinerService tcfDefinerService,
             AnalyticsReporterDelegator analyticsReporter,
             Metrics metrics,
-            TimeoutFactory timeoutFactory) {
+            TimeoutFactory timeoutFactory,
+            EnhancedCookieSync enhancedCookieSync) {
 
         return new SetuidHandler(
                 defaultTimeoutMs,
@@ -368,7 +370,8 @@ public class ApplicationServerConfiguration {
                 tcfDefinerService,
                 analyticsReporter,
                 metrics,
-                timeoutFactory);
+                timeoutFactory,
+                enhancedCookieSync);
     }
 
     @Bean

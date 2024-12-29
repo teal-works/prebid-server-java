@@ -30,6 +30,7 @@ import org.prebid.server.bidder.UsersyncMethod;
 import org.prebid.server.bidder.UsersyncMethodType;
 import org.prebid.server.bidder.UsersyncUtil;
 import org.prebid.server.bidder.Usersyncer;
+import org.prebid.server.bids.EnhancedCookieSync;
 import org.prebid.server.cookie.UidsCookie;
 import org.prebid.server.cookie.UidsCookieService;
 import org.prebid.server.cookie.exception.UnauthorizedUidsException;
@@ -86,6 +87,7 @@ public class SetuidHandler implements ApplicationResource {
     private final Metrics metrics;
     private final TimeoutFactory timeoutFactory;
     private final Map<String, UsersyncMethodType> cookieNameToSyncType;
+    private final EnhancedCookieSync enhancedCookieSync;
 
     public SetuidHandler(long defaultTimeout,
                          UidsCookieService uidsCookieService,
@@ -110,6 +112,34 @@ public class SetuidHandler implements ApplicationResource {
         this.metrics = Objects.requireNonNull(metrics);
         this.timeoutFactory = Objects.requireNonNull(timeoutFactory);
         this.cookieNameToSyncType = collectMap(bidderCatalog);
+        this.enhancedCookieSync = null;
+    }
+
+    public SetuidHandler(long defaultTimeout,
+                         UidsCookieService uidsCookieService,
+                         ApplicationSettings applicationSettings,
+                         BidderCatalog bidderCatalog,
+                         SetuidPrivacyContextFactory setuidPrivacyContextFactory,
+                         SetuidGppService gppService,
+                         ActivityInfrastructureCreator activityInfrastructureCreator,
+                         HostVendorTcfDefinerService tcfDefinerService,
+                         AnalyticsReporterDelegator analyticsDelegator,
+                         Metrics metrics,
+                         TimeoutFactory timeoutFactory,
+                         EnhancedCookieSync enhancedCookieSync) {
+
+        this.defaultTimeout = defaultTimeout;
+        this.uidsCookieService = Objects.requireNonNull(uidsCookieService);
+        this.applicationSettings = Objects.requireNonNull(applicationSettings);
+        this.setuidPrivacyContextFactory = Objects.requireNonNull(setuidPrivacyContextFactory);
+        this.gppService = Objects.requireNonNull(gppService);
+        this.activityInfrastructureCreator = Objects.requireNonNull(activityInfrastructureCreator);
+        this.tcfDefinerService = Objects.requireNonNull(tcfDefinerService);
+        this.analyticsDelegator = Objects.requireNonNull(analyticsDelegator);
+        this.metrics = Objects.requireNonNull(metrics);
+        this.timeoutFactory = Objects.requireNonNull(timeoutFactory);
+        this.cookieNameToSyncType = collectMap(bidderCatalog);
+        this.enhancedCookieSync = enhancedCookieSync;
     }
 
     private static Map<String, UsersyncMethodType> collectMap(BidderCatalog bidderCatalog) {
@@ -323,6 +353,9 @@ public class SetuidHandler implements ApplicationResource {
 
         final UidsCookieUpdateResult uidsCookieUpdateResult =
                 uidsCookieService.updateUidsCookie(setuidContext.getUidsCookie(), bidder, uid);
+        if (enhancedCookieSync != null) {
+            enhancedCookieSync.updateEnhancedUids(uidsCookieUpdateResult.getUidsCookie(), routingContext);
+        }
         final Cookie updatedUidsCookie = uidsCookieService.toCookie(uidsCookieUpdateResult.getUidsCookie());
         addCookie(routingContext, updatedUidsCookie);
 

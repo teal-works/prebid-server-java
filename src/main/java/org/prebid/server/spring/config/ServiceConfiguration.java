@@ -73,6 +73,7 @@ import org.prebid.server.bidder.BidderErrorNotifier;
 import org.prebid.server.bidder.BidderRequestCompletionTrackerFactory;
 import org.prebid.server.bidder.HttpBidderRequestEnricher;
 import org.prebid.server.bidder.HttpBidderRequester;
+import org.prebid.server.bids.EnhancedCookieSync;
 import org.prebid.server.bids.IIQ;
 import org.prebid.server.cache.BasicPbcStorageService;
 import org.prebid.server.cache.CoreCacheService;
@@ -663,6 +664,15 @@ public class ServiceConfiguration {
     }
 
     @Bean
+    EnhancedCookieSync enhancedCookieSync(
+            JacksonMapper mapper,
+            Ortb2ImplicitParametersResolver implicitParametersResolver
+    ) {
+        return new EnhancedCookieSync(mapper,
+                implicitParametersResolver);
+    }
+
+    @Bean
     UidsCookieService uidsCookieService(
             @Value("${host-cookie.optout-cookie.name:#{null}}") String optOutCookieName,
             @Value("${host-cookie.optout-cookie.value:#{null}}") String optOutCookieValue,
@@ -673,7 +683,8 @@ public class ServiceConfiguration {
             @Value("${host-cookie.max-cookie-size-bytes}") Integer maxCookieSizeBytes,
             PrioritizedCoopSyncProvider prioritizedCoopSyncProvider,
             Metrics metrics,
-            JacksonMapper mapper) {
+            JacksonMapper mapper,
+            EnhancedCookieSync enhancedCookieSync) {
 
         return new UidsCookieService(
                 optOutCookieName,
@@ -685,7 +696,8 @@ public class ServiceConfiguration {
                 maxCookieSizeBytes,
                 prioritizedCoopSyncProvider,
                 metrics,
-                mapper);
+                mapper,
+                enhancedCookieSync);
     }
 
     @Bean

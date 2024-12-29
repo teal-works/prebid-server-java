@@ -5,6 +5,7 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.CookieSameSite;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.lang3.StringUtils;
+import org.prebid.server.bids.EnhancedCookieSync;
 import org.prebid.server.cookie.model.UidWithExpiry;
 import org.prebid.server.cookie.model.UidsCookieUpdateResult;
 import org.prebid.server.cookie.proto.Uids;
@@ -47,6 +48,7 @@ public class UidsCookieService {
     private final PrioritizedCoopSyncProvider prioritizedCoopSyncProvider;
     private final Metrics metrics;
     private final JacksonMapper mapper;
+    private final EnhancedCookieSync enhancedCookieSync;
 
     public UidsCookieService(String optOutCookieName,
                              String optOutCookieValue,
@@ -58,6 +60,35 @@ public class UidsCookieService {
                              PrioritizedCoopSyncProvider prioritizedCoopSyncProvider,
                              Metrics metrics,
                              JacksonMapper mapper) {
+        if (maxCookieSizeBytes != 0 && maxCookieSizeBytes < MIN_COOKIE_SIZE_BYTES) {
+            throw new IllegalArgumentException(
+                    "Configured cookie size is less than allowed minimum size of " + MIN_COOKIE_SIZE_BYTES);
+        }
+
+        this.optOutCookieName = optOutCookieName;
+        this.optOutCookieValue = optOutCookieValue;
+        this.hostCookieFamily = hostCookieFamily;
+        this.hostCookieName = hostCookieName;
+        this.hostCookieDomain = StringUtils.isNotBlank(hostCookieDomain) ? hostCookieDomain : null;
+        this.ttlSeconds = Duration.ofDays(ttlDays).getSeconds();
+        this.maxCookieSizeBytes = maxCookieSizeBytes;
+        this.prioritizedCoopSyncProvider = Objects.requireNonNull(prioritizedCoopSyncProvider);
+        this.metrics = Objects.requireNonNull(metrics);
+        this.mapper = Objects.requireNonNull(mapper);
+        this.enhancedCookieSync = null;
+    }
+
+    public UidsCookieService(String optOutCookieName,
+                             String optOutCookieValue,
+                             String hostCookieFamily,
+                             String hostCookieName,
+                             String hostCookieDomain,
+                             int ttlDays,
+                             int maxCookieSizeBytes,
+                             PrioritizedCoopSyncProvider prioritizedCoopSyncProvider,
+                             Metrics metrics,
+                             JacksonMapper mapper,
+                             EnhancedCookieSync enhancedCookieSync) {
 
         if (maxCookieSizeBytes != 0 && maxCookieSizeBytes < MIN_COOKIE_SIZE_BYTES) {
             throw new IllegalArgumentException(
@@ -74,6 +105,7 @@ public class UidsCookieService {
         this.prioritizedCoopSyncProvider = Objects.requireNonNull(prioritizedCoopSyncProvider);
         this.metrics = Objects.requireNonNull(metrics);
         this.mapper = Objects.requireNonNull(mapper);
+        this.enhancedCookieSync = enhancedCookieSync;
     }
 
     /**
@@ -93,10 +125,18 @@ public class UidsCookieService {
      * Note: UIDs will be excluded from resulting {@link UidsCookie} if their value are 'null'.
      */
     public UidsCookie parseFromRequest(RoutingContext routingContext) {
+        if (enhancedCookieSync != null) {
+            return enhancedCookieSync.enhanceUids(parseFromCookies(HttpUtil.cookiesAsMap(routingContext)),
+                    routingContext);
+        }
         return parseFromCookies(HttpUtil.cookiesAsMap(routingContext));
     }
 
     public UidsCookie parseFromRequest(HttpRequestContext httpRequest) {
+        if (enhancedCookieSync != null) {
+            return enhancedCookieSync.enhanceUids(parseFromCookies(HttpUtil.cookiesAsMap(httpRequest)),
+                    httpRequest);
+        }
         return parseFromCookies(HttpUtil.cookiesAsMap(httpRequest));
     }
 

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
-import com.github.benmanes.caffeine.cache.Policy;
 import com.iab.openrtb.request.BidRequest;
 import com.iab.openrtb.request.Device;
 import com.iab.openrtb.request.Eid;
@@ -72,7 +71,6 @@ public class IIQ {
 
     private final Set<String> fetchInProgress;
     private final Cache<String, ResponseCacheInfo> fetchedData;
-    private final Policy.VarExpiration cacheExpiration;
 
     public IIQ(HttpClient httpClient,
                JacksonMapper mapper,
@@ -104,7 +102,6 @@ public class IIQ {
                     }
                 })
                 .<String, ResponseCacheInfo>build();
-        cacheExpiration = fetchedData.policy().expireVariably().get();
     }
 
     private String getEndpointURL(Device device, String domain, String thirdPartyID, String firstPartyID,
@@ -216,7 +213,7 @@ public class IIQ {
     private JsonNode updateCache(ResponseCacheInfo cacheInfo) {
         final String cacheKey = cacheInfo.cacheKey;
         if (cacheInfo.getFetchStatus() == FetchStatus.success || !fetchedData.asMap().containsKey(cacheKey)) {
-            cacheExpiration.put(cacheKey, cacheInfo, cacheInfo.cacheTtl, TimeUnit.MILLISECONDS);
+            fetchedData.put(cacheKey, cacheInfo);
         }
 
         fetchInProgress.remove(cacheKey);
