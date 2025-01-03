@@ -257,14 +257,14 @@ public class IIQ {
                 exisitingEuids.forEach(id -> {
                     if (Objects.equals(id.getSource(), "pubcid.org") || Objects.equals(id.getSource(), domain)) {
                         ids.firstPartyID = id.getUids().getFirst().getId();
-                    } else if (Objects.equals(id.getSource(), "id5-sync.com")) {
-                        ids.id5 = id.getUids().getFirst().getId();
+                    } else if (Objects.equals(id.getSource(), "criteo.com")) {
+                        ids.preferredThirdPartyID = id.getUids().getFirst().getId();
                     } else {
                         ids.thirdPartyID = id.getUids().getFirst().getId();
                     }
                 });
-                if (!ids.id5.isEmpty()) {
-                    ids.thirdPartyID = ids.id5;
+                if (!ids.preferredThirdPartyID.isEmpty()) {
+                    ids.thirdPartyID = ids.preferredThirdPartyID;
                 }
                 if (!ids.firstPartyID.isEmpty()) {
                     ids.firstPartyCreationEPOC = String.valueOf(System.currentTimeMillis());
@@ -392,6 +392,6 @@ public class IIQ {
         @NonFinal
         String firstPartyCreationEPOC = "";
         @NonFinal
-        String id5 = "";
+        String preferredThirdPartyID = "";
     }
 }
